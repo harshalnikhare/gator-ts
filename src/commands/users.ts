@@ -1,5 +1,5 @@
-import { setUser } from "src/config";
-import { createUser, getUser } from "src/lib/db/queries/users";
+import { readConfig, setUser } from "src/config";
+import { createUser, getUser, getUsers } from "src/lib/db/queries/users";
 
 export async function handlerLogin(cmdName: string, ...args: string[]) {
   if (args.length !== 1) {
@@ -27,10 +27,34 @@ export async function handlerRegister(cmdName: string, ...args: string[]) {
 
   try {
     const user = await createUser(name);
+    if (!user) {
+      throw new Error(`User ${name} not found`);
+    }
     setUser(user.name);
     console.log("User switched successfully!");
     console.log(`Current user: ${name}`);
   } catch (err) {
     throw new Error(`Unalbe to create user: ${name}`);
+  }
+}
+
+export async function handlerUsers(cmdName: string, ...args: string[]) {
+  if (args.length !== 0) {
+    throw new Error(`Usage: ${cmdName}`);
+  }
+
+  try {
+    const users = await getUsers();
+    const config = readConfig();
+    const currentUser = config.currentUserName;
+    users.forEach((user) => {
+      if (user.name === currentUser) {
+        console.log(`* ${user.name} (current)`);
+      } else {
+        console.log(`* ${user.name}`);
+      }
+    });
+  } catch (err) {
+    throw new Error(`Unalbe to fetch users`);
   }
 }
